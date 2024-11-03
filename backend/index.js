@@ -1,10 +1,9 @@
 import express from "express";
 import cors from "cors";
+import TaskModel from "./db.js";
 
 const app = express();
 const PORT = 4000;
-
-let tasks = [];
 
 app.use(express.json());
 app.use(cors());
@@ -18,22 +17,22 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/tasks", (req, res) => {
+app.get("/tasks", async (req, res) => {
+  const tasks = await TaskModel.find();
   res.status(200).json(tasks);
 });
 
-app.post("/tasks", (req, res) => {
+app.post("/tasks", async (req, res) => {
   const task = req.body;
-  tasks.push(task);
+  await TaskModel.create(task);
   res.status(201).json(task);
 });
 
-app.delete("/tasks/:id", (req, res) => {
+app.delete("/tasks/:id", async (req, res) => {
   const id = req.params.id;
-  const index = tasks.findIndex((task) => task.id == id);
-  console.log(id);
-  if (index !== -1) {
-    tasks.splice(index, 1);
+  const exists = await TaskModel.exists({ id: id });
+  if (exists) {
+    await TaskModel.deleteOne({ id: id });
     res.status(200).json({ message: "Task deleted successfully" });
   } else {
     res.status(404).json({ message: "Task not found" });
